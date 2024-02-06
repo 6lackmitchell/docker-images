@@ -4,6 +4,7 @@ MAINTAINER Mitchell Black <6lack.mitchell@gmail.com>
 
 # Set the environment variables to avoid interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH = "${PATH}:/home/poetry/bin"
 
 # Update the package list and install necessary packages
 RUN apt-get update && apt-get install -y \
@@ -54,6 +55,13 @@ RUN apt-get install -y python3.10 python3-pip python3-dev
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 RUN apt-get update
 
+# install VS Code (code-server)
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+
+# install VS Code extensions
+RUN code-server --install-extension ms-python.python \
+                --install-extension ms-toolsai.jupyter
+
 ARG YOUR_ENV
 
 ENV YOUR_ENV=${YOUR_ENV} \
@@ -65,16 +73,18 @@ ENV YOUR_ENV=${YOUR_ENV} \
   PIP_DEFAULT_TIMEOUT=100 \
   # Poetry's configuration:
   POETRY_NO_INTERACTION=1 \
-  POETRY_VIRTUALENVS_CREATE=1 \
+  POETRY_VIRTUALENVS_CREATE=false \
   POETRY_CACHE_DIR='/var/cache/pypoetry' \
-  POETRY_HOME='/usr/local' \
+  POETRY_HOME='/home/poetry' \
   POETRY_VERSION=1.7.1
 
 # Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN mkdir -p /home/poetry && curl -sSL https://install.python-poetry.org | python3 -
 
 # Clean up
 RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get remove -y curl && \
+    apt-get clean
 
 # Expose the port that Jupyter Notebook will run on
 EXPOSE 8888
